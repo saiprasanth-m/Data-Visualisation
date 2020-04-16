@@ -33,32 +33,37 @@ cur_date = str(datetime.date.today())
 def get_data_from_url(Url):
     resp = requests.get(Url)
     if resp.status_code == 200:
+        print("Scrapping the site...\n")
         soup = BeautifulSoup(resp.content, 'html.parser')
-        
-        ### Getting Active Cases ###
-        active_cases = soup.find_all('li', class_='bg-blue')[0]
-        active_cases = active_cases.get_text().split("\n")[2]
-        print(active_cases)
-        
-        ### Getting Total Recovered ###
-        tot_recovered = soup.find_all('li', class_='bg-green')[0]
-        tot_recovered = tot_recovered.get_text().split("\n")[2]
-        print(tot_recovered)
 
-        ### Getting Total Deaths ###
-        tot_death = soup.find_all('li', class_='bg-red')[0]
-        tot_death = tot_death.get_text().split("\n")[2]
-        print(tot_death)
-
-        ### Getting Table details ###
-        table = soup.find_all('table')[0]
         status = soup.find_all('div', class_='status-update')[0]
         Title = str(status.get_text()).split('\n')
         Head = Title[1].split(' ')
         Datetime = Head[6]+' '+Head[5]
-        case_stats = Datetime+ ":" +active_cases+ "," + tot_recovered+ "," +tot_death+ "\n"
+        print(Title[1])
+        
+        ### Getting Active Cases ###
+        active_cases = soup.find_all('li', class_='bg-blue')[0]
+        active_cases = active_cases.get_text().split("\n")[2]
+        print("Total Active Cases: "+active_cases)
+        
+        ### Getting Total Recovered ###
+        tot_recovered = soup.find_all('li', class_='bg-green')[0]
+        tot_recovered = tot_recovered.get_text().split("\n")[2]
+        print("Recovered Cases: "+tot_recovered)
 
+        ### Getting Total Deaths ###
+        tot_death = soup.find_all('li', class_='bg-red')[0]
+        tot_death = tot_death.get_text().split("\n")[2]
+        print("Death Cases: "+tot_death+"\n")
+
+        case_stats = Datetime+ ":" +active_cases+ "," + tot_recovered+ "," +tot_death+ "\n"
+        
+        print("Getting state table data")
+        
         ### Getting Table details ###
+        table = soup.find_all('table')[0]
+        
         columns = []
         for head in table.find_all('th'):
             columns.append(head.get_text())
@@ -81,7 +86,8 @@ def get_data_from_url(Url):
         fin_dict = {}  
         for cnt in range(0,len(columns)):
             fin_dict[columns[cnt]] = final[cnt]
-        
+
+        fin_dict['S. No.'] = fin_dict['S. No.'][:-1]
         return case_stats,fin_dict,columns,Title[1]
 
 def read_data_from_file(filename):
@@ -103,10 +109,12 @@ def write_data_to_file(filename,case_stats):
             write_file = open(filename,"w")
             write_file.write(temp_str)
             write_file.close()
+            print("Data has been written in: "+filename)
         else:
             write_file = open(filename,"a")
             write_file.write(case_stats)
             write_file.close()
+            print("Data has been written in: "+filename)
 
 def get_date_wise_data(input_date,filename):
     out = read_data_from_file(filename)
@@ -331,6 +339,8 @@ if __name__ == "__main__":
     confirmed = new_table[columns[2]].map(int)
     recovered = new_table[columns[3]].map(int)
     death = new_table[columns[4]].map(int)
+    
+    print("\nStarted plotting...")
     
     plot_state_wise_data(cur_date,states,confirmed,recovered,death,title)
     plot_date_wise_data()
